@@ -1,39 +1,25 @@
-from flask import Flask, jsonify, request
+from flask import Flask,  request
+
+from flask_smorest import Api
+from resources.shop import blueprint as ShopBluePrint
+from resources.product import blueprint as ProductBluePrint
+
 app = Flask(__name__)
+app.config["PROPAGATE_EXCEPTIONS"] = True
+app.config["API_TITLE"] = "Stores REST API"
+app.config["API_VERSION"] = "v1"
+app.config["OPENAPI_VERSION"] = "3.0.3"
+app.config["OPENAPI_URL_PREFIX"] = "/"
+app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
+app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
-shopdata= [{"shop_name":"AmrutaGrocery", "product":[{"prod_name":"pencil", "price":10, "brand":"Nataraj"}]}]
+# to run the App
 
-@app.route("/shops")
-def getShops():
-    
-    return shopdata
-    # return "Learn python flask framework"
+api = Api(app)
+api.register_blueprint(ShopBluePrint)
+api.register_blueprint(ProductBluePrint)
+# app.run()
 
+if __name__ == "__main__":
+    app.run(debug=True)
 
-# post method - create shop
-@app.route("/addShopDetails", methods=['POST'])
-def createShop():
-    shop = request.json
-    shopdata.append(shop)
-    return "success", 201
-
-#add product in particular shop - POST method
-@app.route("/shops/<shop_name>/add_product", methods = ["POST"])
-def createProduct(shop_name):
-    new_prod =request.json
-    for data in shopdata:
-        if(data["shop_name"]==shop_name):
-            data["product"].append(new_prod)
-            return new_prod, 201
-    return {"message":"Shop name is not found"}, 404
-
-@app.route("/shops/<shop_name>", methods=["GET"])
-
-def getIndividualDetails(shop_name):
-    for data in shopdata:
-        if(data["shop_name"]==shop_name):
-            return data, 201
-    return {"message":"Shop details are not found"}, 404
-
-if __name__== "__main__":
-    app.run()
