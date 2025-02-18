@@ -14,7 +14,7 @@ blueprint = Blueprint('products', __name__, description = 'Operations in shop')
 @blueprint.route('/product')
 class ProductList(MethodView):
     # get product
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.response(200, ProductSchema(many=True))
     def get(self):
         # To get the list data from the database
@@ -22,7 +22,7 @@ class ProductList(MethodView):
         # return list(products.values())
     
     # add product
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.arguments(ProductSchema)
     @blueprint.response(201,ProductSchema)
     def post(self, product_data):
@@ -41,29 +41,15 @@ class ProductList(MethodView):
 
 
 
-        # print(product_data)
-        # print('Product is called')
-        # for data in products:
-        #     if(data['prod_name'] == product_data['prod_name']):
-        #         abort(404, message = 'Product is already exist')
-        # prod_id = uuid.uuid4().hex
-        # products[prod_id] = {**product_data, 'id':prod_id}
-        # return products[prod_id]
-
-
 @blueprint.route('/product/<product_id>')
 class Product(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.response(200, ProductSchema(many=True))
     def get(self,product_id):
         product = ProductModel.query.get_or_404(product_id)
         return product
-        # try:
-
-        #     return products[product_id]
-        # except:
-        #     abort(404, {'message':'The product is not found'})
-    @jwt_required()
+      
+    @jwt_required(fresh=True)
     @blueprint.arguments(ProductUpdateSchema) 
     @blueprint.response(200, ProductSchema)
     def put(self, product_data,product_id):
@@ -82,30 +68,12 @@ class Product(MethodView):
                abort(400, message ='Error while updating the Product' )
 
            return product
-               
-        # try:
-         
-           
-        #     # products[product_id]|= product_data
-        #     # return products[product_id]
-        # except KeyError:
-        #     abort(404, {'message':'Product is not found'})
+
 
    
-    @jwt_required()
+    @jwt_required(fresh=True)
     def delete(self, product_id):
         product = ProductModel.query.get_or_404(product_id)
         db.session.delete(product)
         db.session.commit()
         return {"message":"The product is deleted successfully"}
-        # try:
-        #     del(products[product_id])
-        #     return {'message':'Product  is deleted successfully'}
-        # except KeyError:
-        #     abort(404, message = 'Product  is not found')
-  
-    # def get(self, product_id):
-    #     try:
-    #         return list(products[product_id])
-    #     except:
-    #         abort(400, {'message':'Product name is not found'})

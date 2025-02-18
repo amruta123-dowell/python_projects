@@ -4,8 +4,12 @@ from db import db
 from models import UserModel
 from schemas import UserModelSchema
 from passlib.hash import pbkdf2_sha256
-from flask_jwt_extended import create_access_token, jwt_required
-
+from flask_jwt_extended import (create_access_token,
+                                jwt_required, get_jwt, 
+                                create_refresh_token,
+                                 get_jwt_identity)
+from blacklist import BLACKLIST
+from datetime import timedelta
 blueprint = Blueprint("Users", "users", description = "Operations in Users")
 
 @blueprint.route("/register")
@@ -25,7 +29,7 @@ class UserRegister(MethodView):
    
 @blueprint.route("/user")
 class User(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.response(200,UserModelSchema(many=True))
     def get(self):
         return UserModel.query.all()
@@ -35,9 +39,31 @@ class User(MethodView):
 class UserLogin(MethodView):
     @blueprint.arguments(UserModelSchema)
     def post(self, user_data):
-        user = UserModel.query.filter(UserModel.username== user_data["username"]).first()
-        if(user and pbkdf2_sha256.verify( user_data["password"], user.password)):
-            access_token = create_access_token(identity=user.id)
-            return {"access_token": access_token}, 201
+        user = UserModel.query.filter(UserModel.username == user_data["username"]).first()
+        if user and pbkdf2_sha256.verify(user_data["password"], user.password):
+            access_token = create_access_token(identity=str(user.id) ,fresh=True, expires_delta=timedelta(minutes=10))
+            refresh_token = create_refresh_token(str(user.id))
+            print(f"ACCESS TOKEN: {access_token}")  # Debugging
+            return {"access_token": access_token, "Refresh_token": refresh_token}, 201
         
-        abort(401, message = "Invalid credentials")
+        abort(401, message="Invalid credentials")
+
+
+@blueprint.route("/logout")
+class UserLogout(MethodView):
+    @jwt_required()
+    def delete(self):
+        jti = get_jwt()["jti"]
+        BLACKLIST.add(jti)
+        return {"message":"Successfully deleted"}, 200
+
+@blueprint.route("/refresh")
+class TokenRefresh(MethodView):
+    @jwt_required()
+    def post(self):
+        current_user = get_jwt_identity()
+        new_token = create_access_token(identity=current_user, fresh=False)
+        jti= get_jwt()["jti"]
+        BLACKLIST.add(jti)
+        return { "access_token":new_token },200
+   

@@ -9,12 +9,13 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 blueprint = Blueprint("shops", __name__, description = "Operations in shop")
 @blueprint.route("/shop")
 class ShopList(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.response(200, ShopSchema(many=True))
     def get(self):
         return ShopModel.query.all()
+    
     # list(shops.values())
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.arguments(ShopSchema)
     @blueprint.response(200,ShopSchema)
     def post(self,shop_data):
@@ -45,7 +46,7 @@ class ShopList(MethodView):
 
 @blueprint.route("/shop/<shop_id>")
 class Shop(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True)
     @blueprint.response(200, ShopSchema)
     def get(self,shop_id):
         shop = ShopModel.query.get_or_404(shop_id); 
@@ -55,7 +56,7 @@ class Shop(MethodView):
         #     return shops[shop_id]
         # except KeyError:
         #     abort(404, message = "Shop not found")
-    @jwt_required()        
+    @jwt_required(fresh=True)        
     def delete(self, shop_id):
         shop = ShopModel.query.get_or_404(shop_id)
         db.session.delete(shop)
